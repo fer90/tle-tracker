@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satellite Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        #results {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Satellite Pass Predictor</h1>
+        <form id="trackerForm">
+            <div class="form-group">
+                <label for="tle1">TLE Line 1</label>
+                <input type="text" id="tle1" name="tle_line1" placeholder="1 25544U 98067A   ..." required>
+            </div>
+            <div class="form-group">
+                <label for="tle2">TLE Line 2</label>
+                <input type="text" id="tle2" name="tle_line2" placeholder="2 25544  51.6442 ..." required>
+            </div>
+            <div class="form-group">
+                <label for="lat">Latitude</label>
+                <input type="number" id="lat" name="latitude" step="any" placeholder="e.g. 40.7128" required>
+            </div>
+            <div class="form-group">
+                <label for="lon">Longitude</label>
+                <input type="number" id="lon" name="longitude" step="any" placeholder="e.g. -74.0060" required>
+            </div>
+            <div class="form-group">
+                <label for="ele">Elevation (m)</label>
+                <input type="number" id="ele" name="elevation" value="0">
+            </div>
+            <button type="submit">Get Passes</button>
+        </form>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('trackerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const params = new URLSearchParams(formData);
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = 'Loading...';
+
+            try {
+                const response = await fetch(`/api/passes?${params.toString()}`);
+                const data = await response.json();
+                resultsDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultsDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
