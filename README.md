@@ -2,7 +2,7 @@
 
 A web application to track satellites in real-time, predict visible passes, and visualize orbits in 3D.
 
-![Satellite Pass Predictor Sneak Peek](SatellitePassPRedictor.jpeg)
+![Satellite Pass Predictor Sneak Peek](SatellitePassPredictor.jpeg)
 
 ## ✨ Features
 
