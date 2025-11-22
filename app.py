@@ -53,7 +53,12 @@ def get_passes():
             name = ('rise', 'culminate', 'set')[event]
             
             if name == 'rise':
-                current_pass = {"rise_time": ti.utc_datetime().isoformat(), "max_elevation": 0.0}
+                alt, az, distance = difference.at(ti).altaz()
+                current_pass = {
+                    "rise_time": ti.utc_datetime().isoformat(), 
+                    "max_elevation": 0.0,
+                    "rise_azimuth": az.degrees
+                }
             elif name == 'culminate':
                 # Calculate elevation at culmination
                 alt, az, distance = difference.at(ti).altaz()
@@ -81,6 +86,64 @@ def get_passes():
                 "elevation": elevation
             },
             "passes": passes
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@app.route('/api/orbit', methods=['GET'])
+def get_orbit():
+    tle_line1 = request.args.get('tle_line1')
+    tle_line2 = request.args.get('tle_line2')
+    start_time_utc = request.args.get('start_time_utc')
+    end_time_utc = request.args.get('end_time_utc')
+
+    if not all([tle_line1, tle_line2, start_time_utc, end_time_utc]):
+        return jsonify({"status": "error", "message": "Missing parameters"}), 400
+
+    try:
+        from skyfield.api import load, EarthSatellite
+        ts = load.timescale()
+        
+        # Parse times
+        t_start = ts.from_datetime(datetime.datetime.fromisoformat(start_time_utc))
+        t_end = ts.from_datetime(datetime.datetime.fromisoformat(end_time_utc))
+        
+        # Create 1000 points
+        # We can use ts.linspace to generate a vector of times
+        # But find_events uses a different approach. Here we want positions.
+        
+        # Calculate total duration in days
+        duration_days = t_end.tt - t_start.tt
+        
+        # Generate 1000 time points
+        times = ts.tt_jd(
+            [t_start.tt + i * (duration_days / 999.0) for i in range(1000)]
+        )
+        
+        satellite = EarthSatellite(tle_line1, tle_line2, 'Target', ts)
+        
+        # Calculate positions (Geocentric)
+        geocentric = satellite.at(times)
+        
+        # Convert to Lat/Lon/Alt (subpoint)
+        subpoint = geocentric.subpoint()
+        
+        points = []
+        for i in range(1000):
+            points.append({
+                "time": times[i].utc_datetime().isoformat(),
+                "latitude": subpoint.latitude.degrees[i],
+                "longitude": subpoint.longitude.degrees[i],
+                "altitude": subpoint.elevation.m[i]
+            })
+            
+        return jsonify({
+            "status": "success",
+            "points": points
         })
 
     except Exception as e:
