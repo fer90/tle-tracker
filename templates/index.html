@@ -138,6 +138,10 @@
                 <input type="number" id="lon" name="longitude" step="any" placeholder="e.g. -74.0060" required>
             </div>
             <div class="form-group">
+                <button type="button" id="getLocationBtn" style="background-color: #34a853; margin-bottom: 15px;">Get My
+                    Location</button>
+            </div>
+            <div class="form-group">
                 <label for="ele">Elevation (m)</label>
                 <input type="number" id="ele" name="elevation" value="0">
             </div>
@@ -196,6 +200,35 @@
                 document.getElementById('tle1').value = presets[selected].line1;
                 document.getElementById('tle2').value = presets[selected].line2;
             }
+        });
+
+        document.getElementById('getLocationBtn').addEventListener('click', function () {
+            const btn = this;
+            const originalText = btn.innerText;
+            btn.innerText = 'Locating...';
+            btn.disabled = true;
+
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lon').value = position.coords.longitude;
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    alert('Unable to retrieve your location. Please enter manually.');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            );
         });
 
         document.getElementById('trackerForm').addEventListener('submit', async function (e) {
