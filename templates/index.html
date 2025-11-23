@@ -151,10 +151,25 @@
         // Initialize Cesium Viewer
         // Note: In a real app, you would need a Cesium Ion access token for full functionality
         // Cesium.Ion.defaultAccessToken = 'YOUR_TOKEN_HERE';
-        const viewer = new Cesium.Viewer('cesiumContainer', {
-            // terrainProvider: await Cesium.Terrain.fromWorldTerrain() // Requires async or promise handling
-            // Using default ellipsoid for simplicity and to avoid API key requirements
-        });
+        let viewer;
+        try {
+            viewer = new Cesium.Viewer('cesiumContainer', {
+                baseLayerPicker: false,
+                geocoder: false,
+                homeButton: false,
+                infoBox: false,
+                sceneModePicker: false,
+                selectionIndicator: false,
+                timeline: false,
+                navigationHelpButton: false,
+                imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+                    url: 'https://a.tile.openstreetmap.org/'
+                })
+            });
+        } catch (e) {
+            console.error("Cesium initialization failed:", e);
+            document.getElementById('cesiumContainer').innerHTML = `<p style="color: red; padding: 20px;">3D Globe unavailable: ${e.message}</p>`;
+        }
 
         const presets = {
             'ISS': {
@@ -249,7 +264,7 @@
                     const orbitResponse = await fetch(`/api/orbit?${orbitParams.toString()}`);
                     const orbitData = await orbitResponse.json();
 
-                    if (orbitData.status === 'success') {
+                    if (orbitData.status === 'success' && viewer) {
                         // Clear previous entities
                         viewer.entities.removeAll();
 
@@ -293,14 +308,16 @@
                         });
 
                         // Set clock
-                        viewer.clock.startTime = Cesium.JulianDate.fromIso8601(firstPass.rise_time);
-                        viewer.clock.stopTime = Cesium.JulianDate.fromIso8601(firstPass.set_time);
-                        viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(firstPass.rise_time);
-                        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
-                        viewer.clock.multiplier = 10; // Speed up 10x
+                        if (viewer) {
+                            viewer.clock.startTime = Cesium.JulianDate.fromIso8601(firstPass.rise_time);
+                            viewer.clock.stopTime = Cesium.JulianDate.fromIso8601(firstPass.set_time);
+                            viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(firstPass.rise_time);
+                            viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+                            viewer.clock.multiplier = 10; // Speed up 10x
 
-                        // Track entity
-                        viewer.trackedEntity = satelliteEntity;
+                            // Track entity
+                            viewer.trackedEntity = satelliteEntity;
+                        }
                     }
                 }
 
